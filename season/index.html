@@ -71,7 +71,7 @@ body{margin:0;background:var(--ground);color:var(--petal);font-family:var(--book
 .tags span{position:absolute;transform:translate(-50%,0);text-align:center;white-space:nowrap;font-style:italic;font-size:15px;color:var(--bloom-hi);text-shadow:0 1px 8px #000}
 .tags b{display:block;font-family:var(--dot);font-style:normal;font-weight:800;font-size:40px;color:var(--petal);font-variation-settings:"ROND" 100;line-height:1}
 .say .lead{color:var(--petal);opacity:.86;margin-top:.9em}
-.mail{display:inline-block;margin-top:.5em;text-decoration:none;border-bottom:2px solid var(--bloom);font-family:var(--book) !important;font-variation-settings:'opsz' 48 !important;font-weight:700;font-size:clamp(26px,3.4vw,48px);font-variation-settings:"ROND" 100;color:var(--petal);user-select:text;pointer-events:auto}
+.mail{display:table;overflow-wrap:anywhere;font-size:clamp(20px,2.4vw,32px)!important;margin-top:.35em;text-decoration:none;border-bottom:2px solid var(--bloom);font-family:var(--book) !important;font-variation-settings:'opsz' 48 !important;font-weight:700;font-size:clamp(26px,3.4vw,48px);font-variation-settings:"ROND" 100;color:var(--petal);user-select:text;pointer-events:auto}
 .hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);transform:translateX(-50%);font-style:italic;font-size:15px;color:var(--bloom-hi);transition:opacity .4s}
 @media (max-width:700px){
  .say{width:calc(100vw - 48px);background:linear-gradient(rgba(20,25,29,.72),rgba(20,25,29,.5));padding:12px 14px;margin-left:-14px}
@@ -142,8 +142,9 @@ body{margin:0;background:var(--ground);color:var(--petal);font-family:var(--book
   </div>
   <div class="say l" data-on="14.5,99">
     <h2>FieldCount</h2>
-    <p>Built from university research in Ireland.</p>
-    <a class="mail" href="mailto:hello@fieldcount.ai">hello@fieldcount.ai</a>
+    <p class="contact">Contact</p>
+    <a class="mail" href="mailto:gerry.lacey@mumail.ie">gerry.lacey@mumail.ie</a>
+    <a class="mail" href="mailto:aaron.mcafee.2021@mumail.ie">aaron.mcafee.2021@mumail.ie</a>
     <p><a class="lab" href="../lab/index.html">Count a bush yourself</a></p>
   </div>
 

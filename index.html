@@ -37,7 +37,8 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--book)}
 .demos h2{margin:0;font-weight:400;font-size:21px}
 .demos p{margin:0;color:var(--dim);font-size:14px;line-height:1.4}
 footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:30px 56px;color:var(--dim);font-size:15px;border-top:1px solid var(--line)}
-footer a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--faint)}
+footer a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--faint);overflow-wrap:anywhere}
+footer .contact{max-width:100%}
 @media (max-width:900px){.hero{grid-template-columns:minmax(0,1fr);padding-top:84px}.demos{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.demos{grid-template-columns:minmax(0,1fr)}.demos img{aspect-ratio:16/10}}
 @media (prefers-reduced-motion:reduce){.demos img{transition:none}}
@@ -62,6 +63,6 @@ footer a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--fai
     <a href="skeleton/index.html"><img src="media/d_skeleton.jpg" alt="" loading="lazy"><h2>Skeleton</h2><p>The wood, how it moves, and where to prune.</p></a>
   </nav>
 
-  <footer><span>Built from university research in Ireland.</span><a href="mailto:hello@fieldcount.ai">hello@fieldcount.ai</a></footer>
+  <footer><span class="contact">Contact <a href="mailto:gerry.lacey@mumail.ie">gerry.lacey@mumail.ie</a> or <a href="mailto:aaron.mcafee.2021@mumail.ie">aaron.mcafee.2021@mumail.ie</a></span></footer>
 </main>
 </body></html>
