@@ -1,0 +1,67 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>[hidden]{display:none!important}html,body{margin:0}</style></head><body><title>FieldCount</title>
+<style id="fcnav-css">
+.word,.mark,.wm,#brand>:first-child{visibility:hidden}
+.fcnav{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 12px);left:max(16px,env(safe-area-inset-left,0px));
+ display:flex;align-items:center;gap:2px;max-width:calc(100vw - 32px);overflow-x:auto;scrollbar-width:none;
+ background:rgba(18,23,26,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(165,174,180,.2);padding:3px}
+.fcnav::-webkit-scrollbar{display:none}
+.fcnav a{flex:0 0 auto;color:#a5aeb4;text-decoration:none;font:400 15px/1 "Literata",Georgia,serif;padding:8px 12px;transition:color .2s,background .2s}
+.fcnav a:hover{color:#fbfbf4}
+.fcnav a[aria-current="page"]{color:#14191d;background:#fbfbf4}
+.fcnav a.home{font:700 17px/1 "Doto",ui-monospace,monospace;font-variation-settings:"ROND" 100;color:#fbfbf4;padding-right:14px}
+.fcnav a.home[aria-current="page"]{color:#14191d}
+.fcnav a:focus-visible{outline:2px solid #a5aeb4;outline-offset:-2px}
+@media (max-width:700px){.fcnav{top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;max-width:calc(100vw - 16px)}.fcnav a{font-size:14px;padding:8px 9px}}
+</style><nav class="fcnav" aria-label="Pages"><a class="home" href="index.html" aria-current="page">FieldCount</a><a href="season/index.html">Season</a><a href="lab/index.html">Bush lab</a><a href="farm/index.html">Farm</a><a href="skeleton/index.html">Skeleton</a></nav>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..500&display=swap">
+<style>
+/* Landing: a real bush turning, one sentence, one number, then a door into each demo. */
+:root{--ground:#1c2420;--ink:#fbfbf4;--dim:#a5aeb4;--faint:#788492;--line:rgba(165,174,180,.22);
+ --dot:"Doto",ui-monospace,monospace;--book:"Literata",Georgia,serif;color-scheme:dark}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--book)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.hero{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:40px;align-items:center;padding-block:96px 40px}
+.hero h1{margin:0;font-weight:400;font-size:clamp(38px,5vw,70px);line-height:1.02;letter-spacing:-.01em;text-wrap:balance;font-variation-settings:"opsz" 72}
+.proof{display:flex;align-items:baseline;gap:18px;margin-top:30px;flex-wrap:wrap}
+.proof b{font-family:var(--dot);font-weight:800;font-size:clamp(64px,8vw,112px);line-height:.85;font-variation-settings:"ROND" 100}
+.proof b span{font-family:var(--book);font-weight:400;font-size:.55em;margin-left:.04em}
+.proof p{margin:0;max-width:30ch;color:var(--dim);font-size:17px;line-height:1.45}
+.stage{position:relative;aspect-ratio:1/1;max-width:100%;min-width:0}
+.stage video,.stage img{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px}
+.stage .cap{position:absolute;left:0;bottom:-28px;font-size:14px;font-style:italic;color:var(--faint)}
+.demos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding-block:56px 30px;border-top:1px solid var(--line);margin-top:40px}
+.demos a{display:grid;gap:9px;align-content:start;color:inherit;text-decoration:none;min-width:0}
+.demos img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;background:#0f1412;transition:transform .5s cubic-bezier(.2,.7,.2,1),opacity .3s;opacity:.9}
+.demos a:hover img{transform:translateY(-4px);opacity:1}
+.demos a:focus-visible{outline:2px solid var(--dim);outline-offset:4px}
+.demos h2{margin:0;font-weight:400;font-size:21px}
+.demos p{margin:0;color:var(--dim);font-size:14px;line-height:1.4}
+footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:30px 56px;color:var(--dim);font-size:15px;border-top:1px solid var(--line)}
+footer a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--faint)}
+@media (max-width:900px){.hero{grid-template-columns:minmax(0,1fr);padding-top:84px}.demos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.demos{grid-template-columns:minmax(0,1fr)}.demos img{aspect-ratio:16/10}}
+@media (prefers-reduced-motion:reduce){.demos img{transition:none}}
+</style>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h1>One minute of video. Every berry on the bush, counted once.</h1>
+      <div class="proof"><b>19<span>%</span></b><p>average counting error against hand counts on bushes the system was never tuned on. The best video tracker we tested: 42%.</p></div>
+    </div>
+    <div class="stage">
+      <video src="media/turntable.mp4" poster="media/turntable.jpg" muted playsinline loop autoplay preload="auto" aria-label="A real blueberry bush rebuilt in 3D from one walk-around video, turning"></video>
+      <span class="cap">A real bush, 1 July, rebuilt from one walk-around video.</span>
+    </div>
+  </section>
+
+  <nav class="demos" aria-label="Demos">
+    <a href="season/index.html"><img src="media/d_season.jpg" alt="" loading="lazy"><h2>Season</h2><p>One bush from flowers to ripe fruit. Scroll the date.</p></a>
+    <a href="lab/index.html"><img src="media/d_lab.jpg" alt="" loading="lazy"><h2>Bush lab</h2><p>Fifteen real bushes. Count, ripeness, clusters.</p></a>
+    <a href="farm/index.html"><img src="media/d_farm.jpg" alt="" loading="lazy"><h2>Farm</h2><p>Every row on the farm, by variety and ripeness.</p></a>
+    <a href="skeleton/index.html"><img src="media/d_skeleton.jpg" alt="" loading="lazy"><h2>Skeleton</h2><p>The wood, how it moves, and where to prune.</p></a>
+  </nav>
+
+  <footer><span>Built from university research in Ireland.</span><a href="mailto:hello@fieldcount.ai">hello@fieldcount.ai</a></footer>
+</main>
+</body></html>

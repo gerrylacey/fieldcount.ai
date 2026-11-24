@@ -1,0 +1,742 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>[hidden]{display:none!important}html,body{margin:0}</style></head><body><!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Berries on the Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..500&display=swap"><style id="fcnav-css">
+.word,.mark,.wm,#brand>:first-child{visibility:hidden}
+.fcnav{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 12px);left:max(16px,env(safe-area-inset-left,0px));
+ display:flex;align-items:center;gap:2px;max-width:calc(100vw - 32px);overflow-x:auto;scrollbar-width:none;
+ background:rgba(18,23,26,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(165,174,180,.2);padding:3px}
+.fcnav::-webkit-scrollbar{display:none}
+.fcnav a{flex:0 0 auto;color:#a5aeb4;text-decoration:none;font:400 15px/1 "Literata",Georgia,serif;padding:8px 12px;transition:color .2s,background .2s}
+.fcnav a:hover{color:#fbfbf4}
+.fcnav a[aria-current="page"]{color:#14191d;background:#fbfbf4}
+.fcnav a.home{font:700 17px/1 "Doto",ui-monospace,monospace;font-variation-settings:"ROND" 100;color:#fbfbf4;padding-right:14px}
+.fcnav a.home[aria-current="page"]{color:#14191d}
+.fcnav a:focus-visible{outline:2px solid #a5aeb4;outline-offset:-2px}
+@media (max-width:700px){.fcnav{top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;max-width:calc(100vw - 16px)}.fcnav a{font-size:14px;padding:8px 9px}}
+</style><style>body{--fc-top:60px}</style><nav class="fcnav" aria-label="Pages"><a class="home" href="../index.html">FieldCount</a><a href="../season/index.html">Season</a><a href="../lab/index.html">Bush lab</a><a href="../farm/index.html" aria-current="page">Farm</a><a href="../skeleton/index.html">Skeleton</a></nav>
+<meta name="description" content="A blueberry farm with berry counts per bush by ripeness and variety, on rows traced from satellite imagery. Example values.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d0a; --ink:#ece9e1; --mute:#a3a197; --rule:rgba(236,233,225,.2);
+  --glass:rgba(11,13,10,.74); --ex:#d9c48c; --meas:#f3ecdb;
+  --unripe:#8fa83a; --mid:#c24a72; --ripe:#3f5bc4;
+  --serif:"Literata",Georgia,serif; --dot:"Doto","Literata",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;overscroll-behavior:none}
+body{font-family:var(--serif);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#map{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block;touch-action:none;cursor:grab}
+#map.drag{cursor:grabbing}
+/* numbers: dot-matrix Doto, rounded dots */
+.num,.big,.ct,.split span,#load b{font-family:var(--dot);font-variation-settings:"ROND" 100;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* top bar */
+.top{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+  padding:16px 20px;pointer-events:none;z-index:5}
+.wm{font-size:22px;letter-spacing:-.01em;line-height:1}
+.wm small{display:block;font-size:13px;font-style:italic;color:var(--mute);margin-top:5px;letter-spacing:0}
+
+/* intro */
+#intro{position:fixed;left:0;right:0;bottom:12vh;padding:0 20px;z-index:6;max-width:900px}
+#intro .k{font-size:17px;font-style:italic;color:var(--mute)}
+#intro h1{text-shadow:0 2px 30px rgba(0,0,0,.35);font-weight:400;font-size:clamp(46px,10vw,128px);line-height:.95;letter-spacing:-.03em;margin:10px 0 26px}
+#intro h1 em{font-style:italic;font-weight:300;color:var(--mute)}
+.go{font-size:17px;padding:11px 22px 12px;border:1px solid var(--ink);display:inline-flex;gap:14px;align-items:center;transition:background .25s,color .25s}
+.go:hover,.go:focus-visible{background:var(--ink);color:var(--bg);outline:none}
+.go span{display:inline-block;width:1px;height:14px;background:currentColor;transform-origin:top;animation:drop 1.6s ease-in-out infinite}
+@keyframes drop{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(0);transform-origin:bottom}}
+#load{font-size:13px;color:var(--mute);margin-top:14px}
+
+/* place labels during the descent */
+#place{position:fixed;left:50%;top:50%;transform:translate(-50%,calc(-50% + 64px));text-align:center;pointer-events:none;z-index:4;opacity:0;width:min(92vw,640px);text-shadow:0 1px 18px rgba(0,0,0,.5)}
+#place .n{font-size:clamp(28px,4.8vw,50px);letter-spacing:-.02em;line-height:1.05}
+#place .s{font-size:16px;font-style:italic;color:var(--ink);opacity:.8;margin-top:8px}
+
+/* block panel */
+#panel{position:fixed;left:20px;bottom:44px;width:min(370px,calc(100vw - 32px));z-index:5;background:var(--glass);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--rule);padding:14px 18px 14px;visibility:hidden}
+.tag{display:inline-block;font-size:12.5px;font-style:italic;padding:1px 7px 2px;border:1px solid currentColor;line-height:1.4;white-space:nowrap}
+.tag.ex{color:var(--ex)} .tag.pre{color:var(--meas)}
+.big{font-size:clamp(38px,4.3vw,54px);line-height:1;margin:12px 0 8px}
+.sub{font-size:15px;color:var(--mute)}
+.sub b{color:var(--ink);font-weight:400;font-family:var(--dot);font-variation-settings:"ROND" 100;font-weight:700;font-size:16px}
+.bar{display:flex;height:5px;margin:12px 0 9px;background:rgba(255,255,255,.08)}
+.bar i{display:block;height:100%;transition:width .3s}
+.bar i:nth-child(1){background:var(--unripe)} .bar i:nth-child(2){background:var(--mid)} .bar i:nth-child(3){background:var(--ripe)}
+.leg{display:flex;flex-wrap:wrap;gap:3px 14px;font-size:13.5px;color:var(--mute)}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg em{font-style:italic}
+.leg span::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.meas{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:center;width:100%;text-align:left;margin-top:14px;padding-top:12px;border-top:1px solid var(--rule)}
+.meas img{width:64px;height:48px;object-fit:cover;display:block}
+.meas .l1{font-size:13.5px;font-style:italic;color:var(--meas)}
+.meas .l2{font-size:16px;line-height:1.3;margin-top:2px}
+.meas .l2 b{font-family:var(--dot);font-variation-settings:"ROND" 100;font-weight:700;font-size:20px}
+.meas:hover .l2,.meas:focus-visible .l2{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.meas:focus-visible{outline:none}
+
+/* controls */
+.ctrl{position:fixed;right:20px;bottom:44px;display:flex;flex-direction:column;gap:0;z-index:5;visibility:hidden}
+.ctrl button{width:40px;height:40px;border:1px solid var(--rule);border-bottom:0;background:var(--glass);font-size:18px;line-height:1}
+.ctrl button:last-child{border-bottom:1px solid var(--rule);font-size:12px;font-style:italic;height:auto;padding:8px 0}
+.ctrl button:hover,.ctrl button:focus-visible{background:var(--ink);color:var(--bg);outline:none}
+
+/* bush card */
+#card{position:fixed;z-index:8;width:300px;background:rgba(11,13,10,.93);border:1px solid var(--rule);pointer-events:none;
+  opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s}
+#card.on{opacity:1;transform:none}
+#card.pinned{pointer-events:auto}
+#card figure{position:relative;aspect-ratio:4/3;overflow:hidden;background:#1a1d17}
+#card img{width:100%;height:100%;object-fit:cover;display:block}
+#card figcaption{position:absolute;left:0;right:0;bottom:0;padding:16px 10px 6px;font-size:12px;font-style:italic;color:#e9e6dc;
+  background:linear-gradient(transparent,rgba(0,0,0,.65))}
+.cb{padding:12px 14px 14px}
+.ch{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 8px;font-size:14px;color:var(--mute)}
+.ct{font-size:50px;line-height:1;margin:10px 0 4px}
+.cl{font-size:14px;color:var(--mute);line-height:1.35}
+.split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.split div{border-top:2px solid var(--c);padding-top:5px;line-height:1.1}
+.split span{font-size:22px}
+.split small{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
+.cr{font-size:13.5px;color:var(--mute);margin-top:12px;padding-top:9px;border-top:1px solid var(--rule);line-height:1.45}
+.cr b{color:var(--ink);font-family:var(--dot);font-variation-settings:"ROND" 100;font-weight:700;font-size:15px}
+.thumbs{display:flex;gap:4px;margin-top:10px}
+.thumbs button{flex:1;aspect-ratio:4/3;overflow:hidden;opacity:.5;border:1px solid transparent;padding:0}
+.thumbs button.on{opacity:1;border-color:var(--meas)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.cx{display:none;position:absolute;top:0;right:0;z-index:2;font-size:13px;font-style:italic;color:var(--ink);background:rgba(11,13,10,.8);padding:5px 10px 6px}
+#card.pinned .cx{display:inline-block}
+
+.attr{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:9px 20px 10px;font-size:11.5px;color:#8d8b82;
+  background:linear-gradient(transparent,rgba(11,13,10,.85) 45%);pointer-events:none;line-height:1.45}
+
+@media (max-width:640px){
+  #card{background:rgba(11,13,10,.97)}
+  .cx{left:0;right:auto}
+  .top{padding:12px 16px}
+  .wm{font-size:19px}
+  #intro{padding:0 16px;bottom:16vh}
+  #panel{left:16px;bottom:56px;padding:12px 14px 10px}
+  .big{font-size:36px;margin:8px 0 4px}
+  .meas{margin-top:10px;padding-top:9px;grid-template-columns:52px 1fr}
+  .meas img{width:52px;height:39px}
+  .meas .l2{font-size:14.5px}
+  .ctrl{right:16px;bottom:auto;top:96px}
+  .ctrl button{width:36px;height:36px}
+  #card{left:16px!important;right:16px;bottom:56px;top:auto!important;width:auto;display:grid;grid-template-columns:38% 1fr}
+  #card figure{aspect-ratio:auto;min-height:100%}
+  .cb{padding:10px 12px 12px}
+  .ct{font-size:38px;margin-top:6px}
+  .split span{font-size:17px}
+  .attr{padding:8px 16px;font-size:10.5px}
+  body.carded #panel{visibility:hidden!important}
+  .vleg{grid-template-columns:1fr 1fr 1fr;font-size:11.5px;gap:2px 8px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+/* views and variety legend */
+.views{display:flex;gap:0;margin:12px 0 2px}
+.views button{flex:1;padding:6px 0 7px;border:1px solid var(--rule);font-size:14px;color:var(--mute)}
+.views button+button{border-left:0}
+.views button.on{background:var(--ink);color:var(--bg)}
+.vleg{display:none;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:13px;color:var(--mute);margin-top:10px}
+.vleg span{display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vleg span::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;background:var(--c)}
+.vleg span.line::before{border-radius:0;height:3px}
+body.vmode .vleg{display:grid} body.vmode .rleg{display:none}
+.cv{font-size:15px;color:var(--ink);margin-top:3px}
+.cv i{font-style:italic;color:var(--mute)}
+@media (max-width:640px){.vleg{grid-template-columns:1fr 1fr 1fr;font-size:11.5px;gap:2px 8px}.views{margin-top:8px}.views button{padding:4px 0 5px}}
+
+/* panel: measured stretch first, example values second */
+.hero{display:block;width:100%;text-align:left}
+.hero .hl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:15px;color:var(--meas)}
+.hero .hrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hero .big{display:block;margin:8px 0 2px;font-size:clamp(48px,5vw,64px)}
+.hero img{width:84px;height:63px;object-fit:cover;display:block;border:1px solid var(--rule)}
+.hero .hs,.hero .hs2{display:block}
+.hero .hs2{margin-top:3px;font-size:14px}
+.hero:hover .hs,.hero:focus-visible .hs{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.hero:focus-visible{outline:1px solid var(--meas);outline-offset:4px}
+.ex{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule)}
+.exh{font-size:24px;font-style:italic;color:var(--ex);line-height:1.15}
+.exh span{display:block;font-size:13.5px;color:var(--mute);margin-top:2px}
+.exn{margin:8px 0 3px;color:var(--ex);line-height:1.15}
+.exn .num{font-size:24px}
+.exn .u{font-size:15px;margin-left:5px;color:var(--ink)}
+.bar i:nth-child(1){background:var(--ripe)!important} .bar i:nth-child(3){background:var(--unripe)!important}
+@media (max-width:640px){
+  .hero .big{font-size:40px;margin:4px 0 0}
+  .hero img{width:64px;height:48px}
+  .hero .hl,.hero .hs2{font-size:13px}
+  .ex{margin-top:9px;padding-top:8px}
+  .exh{font-size:19px} .exh span{display:inline;font-size:12px;margin-left:4px}
+  .exn .num{font-size:19px} .exn .u{font-size:13px}
+  .exn{margin:5px 0 2px}
+}
+</style>
+</head>
+<body>
+<canvas id="map" aria-label="Satellite map of a blueberry farm with berry counts per bush"></canvas>
+
+<header class="top">
+  <div class="wm">fieldcount<small>berries on the map, a prototype</small></div>
+</header>
+
+<section id="intro">
+  <p class="k">One blueberry farm in July</p>
+  <h1>Co. Cork,<br><em>Ireland</em></h1>
+  <button class="go" id="go" disabled>Descend <span></span></button>
+  <p id="load">Loading imagery</p>
+</section>
+
+<div id="place"><div class="n" id="pn"></div><div class="s" id="ps"></div></div>
+
+<section id="panel" aria-live="polite">
+
+  <div class="ex">
+    <div class="exh">Example values <span>not measured</span></div>
+    <div class="exn"><span class="num" id="pr">0</span><span class="u" style="margin-left:1px">% ripe now,</span> <span class="num" id="pripe">0</span><span class="u">berries ripe now</span></div>
+    <div class="sub">of <b id="pb">0</b> berries on <b id="pbu">0</b> bushes</div>
+    <div class="bar" id="pbar"><i></i><i></i><i></i></div>
+    <div class="views" role="group" aria-label="Colour the bushes by"><button id="vr" class="on">Ripeness</button><button id="vv">Variety</button></div>
+    <div class="leg rleg" style="margin-top:9px"><span style="--c:var(--ripe)">ripe</span><span style="--c:var(--mid)">mid-ripe</span><span style="--c:var(--unripe)">unripe</span><em>dot size shows berries</em></div>
+    <div class="vleg" id="vleg"></div>
+  </div>
+</section>
+
+<div class="ctrl" id="ctrl">
+  <button id="zin" aria-label="Zoom in">+</button>
+  <button id="zout" aria-label="Zoom out">&minus;</button>
+  <button id="replay">Replay</button>
+</div>
+
+<article id="card" aria-live="polite">
+  <figure id="cfig"><img id="cimg" alt=""><figcaption id="ccap"></figcaption></figure>
+  <div class="cb">
+    <button class="cx" id="cx">close</button>
+    <div class="ch"><span id="cid"></span><span class="tag" id="ctag"></span></div>
+    <div class="cv" id="cvar"></div>
+    <div class="ct" id="ctot"></div>
+    <div class="cl" id="clab"></div>
+    <div class="split" id="csplit">
+      <div style="--c:var(--ripe)"><span id="c2"></span><small>ripe</small></div>
+      <div style="--c:var(--mid)"><span id="c1"></span><small>mid-ripe</small></div>
+      <div style="--c:var(--unripe)"><span id="c0"></span><small>unripe</small></div>
+    </div>
+    <div class="thumbs" id="cth"></div>
+    <div class="cr" id="crow"></div>
+  </div>
+</article>
+
+<footer class="attr">Imagery: Esri, Maxar, Earthstar Geographics, and the GIS User Community. Rows traced from this imagery and numbered from the farm's row sheet. Bush counts are example values.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+window.FARM={"meta":{"seed":24,"spacing_m":1.0,"m_per_z18px":0.3695013672456487,"totals_pool":[626,470,425,523,441,280,306],"start":[327680.0,-491520.0],"measured":{"row":24,"variety":"Bluecrop","video":574,"model":522},"levels":[[6,-3145728,-3145728],[7,-1572864,-1572864],[8,-786432,-786432],[9,-393216,-393216],[10,-196608,-196608],[11,-98304,-98304],[12,-49152,-49152],[13,-24576,-24576],[14,-12288,-12288],[15,-6144,-6144],[16,-3072,-3072],[17,-1536,-1536],[18,-768,-768],[19,-384.0,-384.0]],"levelSize":1536},"rows":[{"num":1,"kind":"blueberry","variety":"Last Call","note":"","zone":"zone 1","plot":"P3","a":[164.95,101.78],"b":[80.01,120.61],"len":32.1,"n":32,"g":0,"rev":false,"d0":0.0,"c":[[65,9,164],[117,2,389],[139,10,338],[72,0,281],[150,1,292],[121,7,198],[115,1,442],[181,2,336],[154,5,273],[100,12,204],[193,6,227],[141,10,177],[114,2,192],[92,2,184],[96,28,343],[174,41,177],[174,4,424],[84,3,340],[173,9,376],[145,5,253],[178,0,424],[79,0,201],[86,12,174],[145,0,298],[140,24,298],[186,4,252],[182,23,327],[164,17,247],[86,1,204],[60,0,209],[67,1,231],[120,4,308]]},{"num":2,"kind":"blueberry","variety":"Last Call","note":"","zone":"zone 1","plot":"P3","a":[169.64,89.47],"b":[75.19,110.41],"len":35.7,"n":35,"g":0,"rev":true,"d0":36.1,"c":[[93,1,408],[120,4,492],[48,6,298],[131,7,324],[61,2,259],[62,4,341],[148,2,364],[26,23,255],[46,1,409],[107,0,287],[51,0,242],[41,3,240],[98,12,378],[130,3,391],[60,1,250],[152,12,530],[56,11,328],[112,2,185],[73,12,504],[70,2,204],[61,1,257],[41,0,384],[75,9,380],[72,0,218],[48,1,241],[40,3,270],[163,1,230],[31,15,284],[126,5,586],[116,3,378],[62,7,264],[102,0,299],[117,2,374],[39,7,335],[106,4,371]]},{"num":3,"kind":"blueberry","variety":"Top Shelf","note":"","zone":"zone 1","plot":"P3","a":[171.36,79.87],"b":[71.29,102.06],"len":37.9,"n":37,"g":0,"rev":false,"d0":75.8,"c":[[577,10,44],[365,11,41],[357,24,19],[375,5,17],[419,12,10],[170,0,23],[292,6,11],[694,0,24],[324,1,14],[454,0,52],[604,4,80],[536,2,21],[620,14,63],[407,0,31],[438,1,77],[539,0,17],[415,2,38],[239,1,15],[394,9,22],[383,7,90],[443,7,30],[283,1,21],[257,3,18],[561,6,44],[223,3,20],[401,4,15],[353,0,58],[366,0,46],[632,12,60],[544,8,29],[328,2,14],[313,1,15],[341,12,43],[340,1,11],[465,6,13],[385,4,16],[377,5,37]]},{"num":4,"kind":"blueberry","variety":"Top Shelf","note":"","zone":"zone 1","plot":"P3","a":[171.88,71.82],"b":[67.9,94.87],"len":39.4,"n":39,"g":0,"rev":true,"d0":117.7,"c":[[580,9,10],[237,6,19],[346,1,26],[514,3,36],[303,9,28],[283,0,11],[434,11,80],[319,0,25],[480,19,11],[507,0,22],[374,2,16],[460,5,71],[338,0,22],[283,1,34],[460,3,63],[478,15,47],[443,0,32],[235,2,23],[496,0,81],[417,0,30],[486,7,7],[845,19,33],[346,3,50],[281,10,33],[689,4,91],[216,0,16],[386,1,34],[371,2,23],[444,25,10],[458,17,36],[245,0,24],[290,0,28],[249,3,11],[370,0,20],[209,0,18],[434,3,18],[460,2,75],[522,14,64],[243,2,24]]},{"num":5,"kind":"blueberry","variety":"Blue Ribbon","note":"","zone":"zone 1","plot":"P3","a":[172.75,61.9],"b":[63.89,86.03],"len":41.2,"n":41,"g":0,"rev":false,"d0":161.1,"c":[[309,12,277],[241,1,243],[250,11,207],[343,12,200],[274,21,258],[264,6,141],[159,1,222],[273,1,195],[150,1,128],[230,2,223],[281,4,218],[143,20,240],[175,18,270],[252,6,188],[231,10,190],[277,8,211],[105,0,153],[378,14,186],[373,3,279],[226,10,244],[276,22,152],[189,1,180],[212,5,201],[197,10,201],[267,8,189],[157,20,185],[195,4,126],[103,4,133],[405,4,174],[262,14,265],[156,0,120],[146,7,154],[228,1,229],[114,10,111],[280,0,269],[236,12,154],[161,8,140],[261,3,164],[358,34,379],[202,0,168],[222,3,191]]},{"num":6,"kind":"blueberry","variety":"Blue Ribbon","note":"","zone":"zone 1","plot":"P3","a":[173.73,52.46],"b":[60.23,77.62],"len":43.0,"n":42,"g":0,"rev":true,"d0":206.3,"c":[[188,9,343],[156,33,227],[179,19,392],[105,1,244],[140,21,289],[181,7,257],[114,10,185],[281,8,374],[190,3,254],[103,18,187],[102,6,115],[143,0,132],[193,5,285],[81,1,174],[322,22,369],[49,0,186],[236,0,325],[133,4,311],[97,4,152],[154,2,301],[264,32,242],[172,10,296],[123,2,167],[170,0,216],[107,1,148],[218,10,379],[206,10,313],[124,3,179],[154,0,560],[48,2,226],[157,0,291],[158,2,226],[79,7,166],[293,5,233],[231,1,502],[175,3,252],[136,15,193],[168,5,341],[235,17,334],[137,2,142],[254,12,361],[136,2,267]]},{"num":7,"kind":"blueberry","variety":"Cargo","note":"","zone":"zone 1","plot":"P3","a":[175.85,43.54],"b":[56.98,69.89],"len":45.0,"n":44,"g":0,"rev":false,"d0":253.3,"c":[[237,0,352],[173,7,232],[158,3,388],[156,26,321],[193,0,260],[165,6,275],[204,0,265],[231,5,319],[368,7,305],[175,22,316],[163,7,97],[121,30,226],[260,10,400],[136,3,345],[210,3,295],[246,28,227],[278,4,191],[265,22,375],[112,11,141],[162,15,245],[298,2,271],[184,2,357],[187,14,243],[166,0,109],[271,12,239],[182,2,241],[264,3,285],[190,0,326],[197,34,428],[94,5,172],[164,0,264],[159,5,130],[320,2,237],[130,11,207],[240,8,331],[327,0,285],[149,5,314],[277,75,379],[77,5,172],[57,6,180],[107,3,177],[74,15,164],[115,0,172],[109,1,207]]},{"num":8,"kind":"blueberry","variety":"Cargo","note":"","zone":"zone 1","plot":"P3","a":[180.65,34.03],"b":[53.73,62.16],"len":48.0,"n":48,"g":0,"rev":true,"d0":302.3,"c":[[171,6,332],[192,1,210],[214,2,185],[105,0,173],[217,21,389],[174,5,210],[305,1,296],[250,3,386],[180,2,320],[173,6,303],[81,0,181],[155,0,155],[162,0,335],[234,38,223],[130,2,209],[205,16,223],[171,29,228],[128,10,265],[193,32,212],[107,0,191],[229,0,318],[129,6,295],[205,0,244],[227,6,319],[163,7,221],[155,1,239],[183,5,437],[153,4,127],[124,13,368],[145,25,339],[127,1,207],[276,2,367],[247,0,388],[158,7,329],[145,4,296],[248,1,353],[188,11,210],[132,0,290],[237,45,156],[197,1,441],[195,0,266],[115,0,166],[104,2,168],[170,7,306],[203,6,269],[124,1,167],[144,12,237],[125,5,128]]},{"num":9,"kind":"blueberry","variety":"Sunset Blue","note":"","zone":"zone 1","plot":"P3","a":[185.4,24.27],"b":[52.14,53.81],"len":50.4,"n":50,"g":0,"rev":false,"d0":354.3,"c":[[344,16,153],[517,16,81],[411,0,78],[161,0,95],[300,3,77],[301,15,110],[219,3,56],[212,11,45],[332,2,68],[379,0,104],[295,0,98],[395,1,144],[213,9,79],[443,1,130],[182,1,81],[246,8,67],[381,0,97],[381,2,153],[210,0,92],[266,0,89],[347,31,74],[284,5,31],[203,8,84],[455,14,133],[241,7,58],[167,7,96],[345,3,112],[318,4,196],[194,5,36],[535,6,35],[265,33,101],[340,5,111],[559,1,98],[158,6,66],[430,4,80],[440,22,95],[346,3,57],[360,2,88],[234,1,46],[152,9,66],[267,3,76],[242,7,79],[361,26,61],[399,1,151],[205,5,54],[376,4,138],[393,6,91],[329,3,90],[448,0,124],[352,8,112]]},{"num":10,"kind":"blueberry","variety":"Sunset Blue","note":"","zone":"zone 1","plot":"P3","a":[189.83,15.35],"b":[50.71,46.19],"len":52.7,"n":52,"g":0,"rev":true,"d0":408.7,"c":[[244,4,49],[393,0,96],[224,2,51],[428,9,58],[337,6,123],[426,1,132],[334,1,147],[425,6,104],[306,27,142],[265,11,124],[232,0,131],[320,0,83],[308,8,117],[249,0,59],[306,1,76],[324,3,76],[230,12,126],[299,12,149],[220,0,72],[202,3,46],[220,10,101],[392,68,167],[248,11,83],[253,9,39],[223,11,72],[440,14,107],[191,2,100],[476,0,99],[413,15,92],[345,0,108],[254,2,82],[277,13,47],[441,0,156],[331,0,62],[198,20,46],[303,17,56],[255,5,71],[420,31,70],[392,0,116],[230,13,85],[363,8,82],[288,6,103],[482,6,153],[227,8,24],[356,18,93],[375,0,72],[400,7,124],[380,1,94],[194,1,56],[239,19,38],[367,0,163],[341,0,107]]},{"num":11,"kind":"blueberry","variety":"Chandler / Darrow / Sunset Blue","note":"","zone":"zone 1","plot":"P3","a":[193.9,5.99],"b":[49.41,38.03],"len":54.7,"n":54,"g":0,"rev":false,"d0":465.4,"c":[[199,64,194],[257,10,300],[252,7,225],[320,8,275],[290,19,331],[408,19,322],[143,3,298],[226,8,230],[167,0,511],[218,3,240],[132,28,179],[113,10,276],[163,21,231],[228,4,294],[221,16,194],[147,0,258],[152,4,183],[196,0,362],[134,0,208],[133,10,257],[195,11,250],[137,13,227],[361,2,206],[181,0,261],[126,0,212],[155,4,147],[154,29,412],[176,2,276],[304,2,239],[145,3,94],[188,0,133],[203,0,239],[105,8,136],[145,3,159],[202,35,351],[194,3,160],[178,0,290],[234,7,268],[169,5,204],[160,2,226],[205,0,412],[156,12,299],[128,7,167],[176,0,170],[159,0,263],[240,4,215],[134,0,198],[349,0,233],[130,9,138],[118,1,160],[162,2,204],[97,8,178],[288,5,337],[117,1,148]]},{"num":12,"kind":"blueberry","variety":"Chandler / Darrow / Sunset Blue","note":"","zone":"zone 1","plot":"P3","a":[192.2,-2.85],"b":[47.95,29.13],"len":54.6,"n":54,"g":0,"rev":true,"d0":524.1,"c":[[100,2,148],[272,0,319],[216,38,346],[164,57,523],[123,13,334],[94,6,187],[264,6,224],[131,0,324],[168,2,295],[58,4,207],[201,0,246],[185,0,311],[121,0,217],[180,5,488],[122,0,301],[131,13,323],[112,3,166],[88,6,197],[120,7,134],[202,4,278],[189,14,181],[140,4,295],[101,0,180],[112,0,356],[80,11,239],[204,10,413],[250,6,480],[163,3,311],[112,0,333],[155,8,267],[240,5,329],[82,5,138],[178,16,613],[275,11,213],[145,16,297],[255,40,411],[166,3,214],[74,3,227],[216,46,295],[205,1,241],[82,0,186],[123,0,345],[135,53,395],[89,0,183],[221,25,289],[126,10,316],[248,6,262],[117,13,296],[89,9,243],[213,0,385],[133,1,189],[180,0,426],[51,0,206],[192,2,216]]},{"num":13,"kind":"blueberry","variety":"Chandler / Darrow / Sunset Blue","note":"","zone":"zone 1","plot":"P3","a":[190.46,-10.66],"b":[46.71,21.21],"len":54.4,"n":54,"g":0,"rev":false,"d0":582.7,"c":[[143,3,341],[230,1,314],[189,1,270],[249,9,391],[230,3,360],[296,12,199],[233,1,287],[122,0,193],[160,34,240],[241,0,217],[282,9,329],[136,14,242],[231,4,232],[192,13,214],[160,5,300],[225,0,283],[134,2,190],[208,35,454],[85,7,209],[95,11,133],[227,0,309],[110,4,129],[247,25,232],[258,10,328],[221,14,328],[233,0,210],[215,3,253],[176,0,322],[124,11,165],[128,2,163],[94,0,235],[160,4,314],[271,0,257],[196,6,411],[250,9,205],[183,1,229],[279,0,323],[82,8,153],[205,0,244],[156,2,217],[185,32,354],[132,9,358],[274,1,368],[209,2,403],[112,1,175],[124,1,256],[236,1,376],[142,0,173],[240,0,249],[158,3,196],[218,0,216],[90,4,188],[155,1,213],[78,9,133]]},{"num":14,"kind":"blueberry","variety":"Chandler / Darrow","note":"","zone":"zone 1","plot":"P3","a":[187.16,-18.63],"b":[47.55,12.32],"len":52.8,"n":52,"g":0,"rev":true,"d0":641.1,"c":[[219,7,351],[321,30,341],[316,6,263],[240,22,160],[273,3,170],[299,65,132],[153,3,131],[312,9,211],[187,1,195],[252,1,170],[232,23,217],[221,2,193],[123,7,154],[134,1,126],[393,3,166],[146,0,123],[358,34,371],[149,1,121],[286,20,178],[211,0,206],[153,2,220],[290,1,355],[185,3,138],[136,12,158],[222,8,148],[307,14,185],[200,3,222],[298,1,266],[262,19,204],[240,0,177],[248,1,253],[242,13,316],[220,12,260],[218,5,181],[161,13,142],[208,3,198],[252,4,212],[362,1,192],[235,1,234],[321,33,259],[391,54,206],[171,9,235],[316,15,175],[263,2,171],[202,1,100],[302,0,201],[209,19,146],[87,5,176],[186,0,84],[216,2,250],[369,2,205],[177,19,233]]},{"num":15,"kind":"blueberry","variety":"New Top Shelf","note":"","zone":"zone 1","plot":"P3","a":[171.6,-24.14],"b":[48.59,3.13],"len":46.6,"n":46,"g":0,"rev":false,"d0":697.9,"c":[[440,12,193],[342,13,188],[437,22,209],[304,31,285],[337,0,95],[304,11,152],[444,0,76],[203,2,78],[325,9,143],[359,8,199],[335,2,138],[255,16,143],[433,5,100],[165,1,73],[425,5,147],[278,17,135],[466,60,146],[226,11,60],[350,0,138],[248,15,147],[316,2,121],[377,24,151],[159,5,46],[346,12,74],[208,11,62],[230,15,84],[268,19,121],[238,40,113],[224,1,56],[622,21,146],[306,1,211],[185,3,108],[285,12,140],[233,5,60],[311,1,120],[314,47,56],[408,1,182],[404,32,169],[162,12,113],[177,2,75],[447,15,77],[353,30,176],[177,3,96],[310,12,140],[189,8,35],[247,28,116]]},{"num":16,"kind":"blueberry","variety":"Toro","note":"","zone":"zone 1","plot":"P3","a":[154.44,-28.79],"b":[49.48,-5.52],"len":39.7,"n":39,"g":0,"rev":true,"d0":748.5,"c":[[285,0,99],[224,0,164],[452,12,85],[305,0,80],[466,17,180],[163,0,113],[235,1,80],[349,4,175],[281,12,162],[308,6,163],[175,10,83],[179,1,55],[201,16,70],[331,9,168],[387,9,177],[157,9,71],[288,51,186],[336,9,161],[249,4,33],[344,3,179],[218,13,118],[185,3,76],[321,26,244],[173,8,89],[168,12,118],[365,0,150],[214,12,86],[227,5,63],[344,16,163],[401,2,148],[216,9,66],[236,1,182],[368,1,235],[341,4,140],[147,14,121],[325,32,98],[314,6,175],[454,2,176],[511,8,229]]},{"num":17,"kind":"blueberry","variety":"Last Call","note":"","zone":"zone 2","plot":"P2","a":[147.58,-62.94],"b":[129.85,-31.61],"len":13.3,"n":13,"g":1,"rev":false,"d0":0.0,"c":[[51,3,269],[36,2,260],[30,0,287],[47,0,249],[120,24,419],[77,24,367],[75,48,302],[72,1,340],[124,2,535],[62,0,416],[127,1,284],[134,1,418],[109,0,331]]},{"num":18,"kind":"blueberry","variety":"Last Call","note":"sheet also has Top Shelf written faintly","zone":"zone 2","plot":"P2","a":[149.47,-86.58],"b":[116.84,-28.92],"len":24.5,"n":24,"g":1,"rev":true,"d0":17.3,"c":[[71,0,436],[25,3,441],[42,4,367],[63,0,344],[37,0,420],[71,1,374],[21,6,421],[75,18,391],[77,0,354],[64,33,311],[26,1,368],[53,15,351],[75,13,238],[112,10,395],[39,10,227],[88,8,569],[46,36,447],[12,1,215],[48,0,459],[96,0,408],[35,30,418],[101,0,406],[12,0,335],[46,0,380]]},{"num":19,"kind":"blueberry","variety":"Top Shelf","note":"","zone":"zone 2","plot":"P2","a":[143.23,-93.84],"b":[106.05,-28.13],"len":27.9,"n":27,"g":1,"rev":false,"d0":45.8,"c":[[368,0,10],[421,0,23],[547,2,48],[381,0,45],[470,17,40],[386,0,35],[413,13,47],[508,8,25],[426,4,86],[389,3,68],[615,14,23],[287,0,21],[250,1,27],[430,5,44],[389,11,11],[247,1,30],[362,0,18],[205,12,32],[426,41,24],[468,6,27],[294,4,27],[416,1,27],[371,0,54],[657,14,42],[464,11,55],[664,1,62],[419,0,27]]},{"num":20,"kind":"blueberry","variety":"Blue Ribbon","note":"","zone":"zone 2","plot":"P2","a":[134.57,-97.31],"b":[94.93,-27.24],"len":29.7,"n":29,"g":1,"rev":true,"d0":77.7,"c":[[155,2,118],[374,7,176],[343,2,87],[350,5,134],[292,0,158],[272,1,279],[220,7,212],[240,15,222],[315,4,113],[218,13,110],[292,3,87],[431,38,207],[295,4,163],[324,2,159],[342,3,141],[167,1,135],[396,46,219],[473,12,206],[187,2,92],[392,41,132],[373,22,165],[177,3,75],[308,2,175],[272,38,116],[148,6,108],[167,11,110],[401,11,104],[221,4,110],[175,27,69]]},{"num":21,"kind":"blueberry","variety":"Chandler","note":"","zone":"zone 2","plot":"P2","a":[126.02,-100.99],"b":[83.8,-26.36],"len":31.7,"n":31,"g":1,"rev":false,"d0":111.4,"c":[[160,3,284],[71,16,165],[173,3,271],[104,1,188],[82,11,231],[70,0,259],[101,13,440],[99,73,259],[111,0,183],[189,21,198],[108,1,259],[260,3,514],[116,0,169],[129,16,193],[174,8,350],[152,15,295],[88,1,208],[123,0,408],[151,0,310],[269,4,467],[133,9,333],[165,19,326],[88,16,426],[190,5,406],[99,9,354],[120,1,329],[187,9,329],[128,2,271],[94,2,308],[89,9,196],[136,3,192]]},{"num":22,"kind":"blueberry","variety":"Bluecrop","note":"","zone":"zone 2","plot":"P2","a":[115.36,-100.42],"b":[73.01,-25.57],"len":31.8,"n":31,"g":1,"rev":true,"d0":147.1,"c":[[377,12,90],[359,7,103],[396,2,153],[318,15,199],[192,14,112],[300,1,94],[324,13,109],[325,0,162],[207,1,58],[479,1,141],[347,13,88],[431,6,91],[349,31,148],[365,9,90],[352,1,92],[166,2,81],[298,5,200],[333,1,87],[431,2,152],[178,9,111],[264,1,85],[281,1,102],[349,21,82],[198,5,69],[247,24,91],[273,7,144],[393,46,176],[556,36,147],[528,8,137],[318,2,58],[385,20,196]]},{"num":23,"kind":"blueberry","variety":"Bluecrop","note":"","zone":"zone 2","plot":"P2","a":[105.25,-99.82],"b":[62.78,-24.75],"len":31.9,"n":31,"g":1,"rev":false,"d0":182.9,"c":[[252,9,266],[276,6,256],[193,4,219],[249,4,202],[84,15,229],[154,6,151],[176,5,193],[112,5,92],[211,14,206],[171,0,429],[374,31,400],[377,18,256],[228,5,190],[288,11,210],[145,3,193],[135,13,293],[417,4,355],[304,38,335],[169,48,114],[228,1,267],[211,0,112],[164,19,217],[116,3,156],[185,17,159],[162,0,132],[166,1,204],[135,10,196],[332,1,229],[172,23,130],[271,9,280],[138,16,113]]},{"num":24,"kind":"blueberry","variety":"Bluecrop","note":"","zone":"zone 2","plot":"P2","a":[94.46,-99.03],"b":[67.26,-50.94],"len":20.4,"n":20,"measured":true,"g":1,"rev":true,"d0":218.8},{"num":25,"kind":"blueberry","variety":"Blue Ribbon","note":"","zone":"zone 2","plot":"P2","a":[84.14,-98.55],"b":[72.2,-77.44],"len":9.0,"n":8,"g":1,"rev":false,"d0":243.2,"c":[[304,11,345],[308,25,136],[187,57,203],[225,11,232],[272,8,186],[218,4,186],[130,4,151],[199,5,240]]},{"num":null,"kind":"aronia","variety":"Aronia","note":"","zone":"zone 3, north block","plot":"P1u","a":[12.14,-105.39],"b":[14.29,-70.2],"len":13.0,"n":0,"g":2,"rev":false,"d0":0.0},{"num":null,"kind":"gooseberry","variety":"Gooseberry","note":"","zone":"zone 3, north block","plot":"P1u","a":[3.9,-104.88],"b":[6.01,-70.45],"len":12.7,"n":0,"g":2,"rev":true,"d0":17.0},{"num":26,"kind":"blueberry","variety":"Last Call","note":"","zone":"zone 3, north block","plot":"P1u","a":[-4.83,-104.35],"b":[-2.77,-70.66],"len":12.5,"n":12,"g":2,"rev":false,"d0":33.7,"c":[[66,0,480],[66,0,346],[26,7,246],[32,2,232],[25,11,604],[48,2,452],[65,1,653],[42,1,503],[36,0,296],[27,0,315],[29,2,390],[32,2,459]]},{"num":27,"kind":"blueberry","variety":"Top Shelf","note":"","zone":"zone 3, north block","plot":"P1u","a":[-12.55,-103.63],"b":[-10.54,-70.69],"len":12.2,"n":12,"g":2,"rev":true,"d0":50.2,"c":[[457,2,54],[407,0,61],[278,3,12],[588,7,13],[248,0,16],[513,2,21],[296,0,42],[482,8,20],[554,2,68],[363,1,26],[420,1,35],[465,0,47]]},{"num":28,"kind":"blueberry","variety":"Chandler","note":"","zone":"zone 3, north block","plot":"P1u","a":[-18.54,-103.26],"b":[-16.56,-70.82],"len":12.0,"n":12,"g":2,"rev":false,"d0":66.4,"c":[[91,16,375],[54,31,168],[96,14,392],[65,11,345],[133,44,330],[159,36,340],[100,39,399],[79,0,336],[121,6,447],[62,5,152],[166,3,261],[43,4,256]]},{"num":null,"kind":"aronia","variety":"Aronia","note":"","zone":"zone 3, north block","plot":"P1u","a":[-29.52,-102.59],"b":[-27.6,-71.15],"len":11.6,"n":0,"g":2,"rev":true,"d0":82.4},{"num":29,"kind":"blueberry","variety":"Legacy","note":"","zone":"zone 3, north block","plot":"P1u","a":[-37.51,-102.1],"b":[-35.63,-71.41],"len":11.4,"n":11,"g":2,"rev":false,"d0":98.0,"c":[[133,7,170],[221,19,181],[250,3,230],[152,3,164],[273,12,287],[203,3,197],[169,10,113],[275,33,169],[259,20,160],[181,20,146],[154,15,101]]},{"num":30,"kind":"blueberry","variety":"Legacy","note":"","zone":"zone 3, north block","plot":"P1u","a":[-45.24,-101.63],"b":[-43.41,-71.68],"len":11.1,"n":11,"g":2,"rev":true,"d0":113.4,"c":[[112,12,175],[320,7,464],[182,10,221],[97,10,161],[230,15,235],[186,7,192],[179,18,281],[191,30,253],[129,2,150],[169,7,294],[184,50,374]]},{"num":31,"kind":"blueberry","variety":"Chandler","note":"","zone":"zone 3, north block","plot":"P1u","a":[-52.96,-100.9],"b":[-51.18,-71.71],"len":10.8,"n":10,"g":2,"rev":false,"d0":128.5,"c":[[78,2,147],[173,0,244],[201,28,433],[134,0,504],[90,7,167],[133,5,293],[80,15,301],[179,2,491],[122,16,283],[183,0,390]]},{"num":32,"kind":"blueberry","variety":"Chandler","note":"","zone":"zone 3, north block","plot":"P1u","a":[-61.45,-100.39],"b":[-59.71,-71.94],"len":10.5,"n":10,"g":2,"rev":true,"d0":143.3,"c":[[206,11,469],[173,50,437],[117,2,402],[290,2,415],[50,1,186],[115,17,304],[67,11,218],[50,4,445],[91,16,213],[75,12,203]]},{"num":33,"kind":"blueberry","variety":"Top Shelf / Last Call","note":"","zone":"zone 3, north block","plot":"P1u","a":[-69.43,-99.9],"b":[-67.74,-72.2],"len":10.3,"n":10,"g":2,"rev":false,"d0":157.8,"c":[[34,39,359],[85,3,354],[86,11,392],[74,7,298],[36,47,404],[47,10,250],[70,12,177],[68,10,371],[18,0,269],[17,4,386]]},{"num":34,"kind":"blueberry","variety":"Top Shelf / Last Call","note":"","zone":"zone 3, north block","plot":"P1u","a":[-77.92,-99.38],"b":[-76.27,-72.43],"len":10.0,"n":9,"g":2,"rev":true,"d0":172.1,"c":[[59,11,605],[19,73,405],[42,27,303],[70,9,582],[87,10,455],[57,5,384],[44,16,272],[38,33,322],[41,8,359]]},{"num":null,"kind":"aronia","variety":"Aronia","note":"","zone":"zone 3, south block","plot":"P1l","a":[-63.58,-62.53],"b":[-65.06,-6.05],"len":20.9,"n":0,"g":3,"rev":false,"d0":0.0},{"num":35,"kind":"blueberry","variety":"Sunset Blue","note":"","zone":"zone 3, south block","plot":"P1l","a":[-55.34,-62.07],"b":[-56.81,-6.09],"len":20.7,"n":20,"g":3,"rev":true,"d0":24.9,"c":[[352,18,80],[408,5,95],[234,0,56],[312,2,76],[451,34,64],[538,9,85],[195,3,30],[267,2,19],[370,2,65],[350,36,59],[376,12,76],[313,4,101],[409,0,83],[428,6,150],[233,25,68],[310,4,71],[406,14,117],[511,2,81],[506,65,143],[238,2,41]]},{"num":36,"kind":"blueberry","variety":"Sunset Blue","note":"","zone":"zone 3, south block","plot":"P1l","a":[-47.1,-61.6],"b":[-48.56,-6.12],"len":20.5,"n":20,"g":3,"rev":false,"d0":49.6,"c":[[421,5,138],[330,18,41],[352,3,74],[305,39,124],[462,6,116],[374,14,39],[461,10,56],[255,4,38],[311,3,37],[369,7,105],[173,0,41],[279,4,46],[273,10,40],[432,9,122],[311,2,122],[302,8,69],[191,7,54],[337,0,116],[311,1,108],[483,2,150]]},{"num":37,"kind":"blueberry","variety":"Sunset Blue","note":"","zone":"zone 3, south block","plot":"P1l","a":[-39.12,-60.89],"b":[-40.56,-5.91],"len":20.3,"n":20,"g":3,"rev":true,"d0":74.1,"c":[[247,6,40],[364,2,117],[392,17,191],[189,4,38],[203,30,69],[165,0,58],[392,3,83],[300,33,128],[393,25,141],[282,0,68],[345,22,76],[522,5,109],[397,14,81],[379,45,51],[376,12,64],[355,14,155],[326,9,127],[375,50,70],[344,5,53],[212,10,34]]},{"num":38,"kind":"blueberry","variety":"Top Shelf","note":"","zone":"zone 3, south block","plot":"P1l","a":[-30.63,-60.42],"b":[-32.05,-5.94],"len":20.1,"n":20,"g":3,"rev":false,"d0":98.4,"c":[[428,9,21],[432,5,13],[344,16,9],[258,18,29],[391,2,35],[237,5,9],[296,1,51],[360,10,10],[230,3,15],[233,0,11],[467,0,22],[386,2,23],[474,0,22],[262,1,23],[450,5,22],[281,1,11],[367,10,6],[241,3,32],[642,5,17],[375,5,18]]},{"num":39,"kind":"blueberry","variety":"Blue Ribbon","note":"","zone":"zone 3, south block","plot":"P1l","a":[-21.64,-59.93],"b":[-23.05,-5.95],"len":20.0,"n":19,"g":3,"rev":true,"d0":122.5,"c":[[232,14,54],[224,24,67],[588,15,178],[262,6,64],[201,3,138],[322,2,126],[243,25,171],[221,1,70],[394,6,275],[305,0,137],[365,3,69],[260,24,143],[399,8,264],[323,5,117],[461,1,164],[184,4,77],[328,2,113],[311,0,131],[148,4,108]]},{"num":null,"kind":"aronia","variety":"Aronia","note":"","zone":"zone 3, south block","plot":"P1l","a":[-14.65,-59.5],"b":[-16.05,-6.02],"len":19.8,"n":0,"g":3,"rev":false,"d0":146.5},{"num":40,"kind":"blueberry","variety":"Blue Ray","note":"","zone":"zone 3, south block","plot":"P1l","a":[-6.16,-59.03],"b":[-7.54,-6.05],"len":19.6,"n":19,"g":3,"rev":true,"d0":170.3,"c":[[138,3,179],[54,2,208],[190,5,443],[141,6,310],[132,20,312],[131,27,345],[175,21,239],[86,2,175],[91,9,333],[36,4,293],[143,7,285],[105,23,234],[94,5,192],[189,3,334],[119,4,250],[144,30,291],[102,20,148],[234,4,444],[165,15,467]]},{"num":41,"kind":"blueberry","variety":"Blue Ray","note":"","zone":"zone 3, south block","plot":"P1l","a":[2.08,-58.56],"b":[0.71,-6.08],"len":19.4,"n":19,"g":3,"rev":false,"d0":193.9,"c":[[57,4,404],[78,9,244],[116,5,290],[197,61,616],[53,11,239],[149,6,279],[101,18,347],[87,5,393],[34,21,215],[106,30,467],[58,4,301],[65,6,364],[65,3,403],[82,1,210],[74,10,397],[78,10,311],[95,2,324],[133,12,345],[160,15,432]]},{"num":42,"kind":"blueberry","variety":"Bluecrop","note":"","zone":"zone 3, south block","plot":"P1l","a":[10.07,-58.1],"b":[8.71,-6.12],"len":19.2,"n":19,"g":3,"rev":true,"d0":217.3,"c":[[99,20,246],[105,9,298],[125,13,430],[162,13,326],[66,1,194],[243,11,361],[127,2,306],[188,8,331],[188,10,416],[90,7,184],[141,22,557],[57,0,266],[129,3,512],[106,11,291],[107,8,350],[84,7,271],[139,17,326],[193,17,286],[139,25,387]]},{"num":43,"kind":"blueberry","variety":"Bluecrop","note":"","zone":"zone 3, south block","plot":"P1l","a":[18.82,-57.62],"b":[17.46,-5.89],"len":19.1,"n":19,"g":3,"rev":false,"d0":240.5,"c":[[126,4,105],[393,10,160],[195,5,195],[168,7,111],[192,6,111],[264,7,223],[385,3,274],[361,6,201],[269,14,140],[389,2,151],[259,39,293],[317,15,298],[199,8,145],[204,15,198],[253,2,187],[266,18,136],[434,7,327],[156,7,92],[395,16,364]]},{"num":null,"kind":"gooseberry","variety":"Gooseberry","note":"","zone":"zone 3, south block","plot":"P1l","a":[26.81,-57.16],"b":[25.46,-5.93],"len":18.9,"n":0,"g":3,"rev":true,"d0":263.6}]};
+
+</script>
+<script>
+(function(){
+"use strict";
+var D = window.FARM, M = D.meta, ROWS = D.rows;
+var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+var cv = document.getElementById("map"), ctx = cv.getContext("2d");
+var $ = function(id){ return document.getElementById(id); };
+var COL = ["#8fa83a", "#c24a72", "#3f5bc4"];
+var VCOL = { "Last Call":"#e0823f", "Top Shelf":"#e8c547", "New Top Shelf":"#a98f2f", "Blue Ribbon":"#5aa9e6", "Cargo":"#c08a5a",
+  "Sunset Blue":"#e8709a", "Chandler":"#4fbf8f", "Toro":"#cbd86e", "Bluecrop":"#8d97ff", "Legacy":"#d65f5f", "Blue Ray":"#3fc6cf",
+  "mixed":"#c9c4b8", "aronia":"#7d6a86", "gooseberry":"#7f8a5e" };
+function vkey(r){ return r.kind !== "blueberry" ? r.kind : (VCOL[r.variety] ? r.variety : "mixed"); }
+var fmt = function(n){ return Math.round(n).toLocaleString("en-GB"); };
+var W = 0, H = 0, DPR = 1;
+var SP = M.spacing_m / M.m_per_z18px, MPP = M.m_per_z18px;
+var PH_MEAS = ["00596", "00894", "02384"];
+var PH_ALL = ["00298","00596","00894","01192","01490","01788","02086","02384"];
+
+/* ---------- rows and bushes ---------- */
+var bushes = [], meanT = 0, nEx = 0, DMAX = 0, groups = {}, MEAS = null;
+/* no measured row on this map: every row shows example values (row 24 borrows its neighbour's example spread) */
+ROWS.forEach(function(r, i){ if (r.measured){ r.measured = false; if (!r.c){ var nb = (ROWS[i-1] && ROWS[i-1].c) ? ROWS[i-1] : ROWS[i+1]; r.c = []; for (var k = 0; k < r.n; k++) r.c.push(nb.c[k % nb.c.length].slice()); } } });
+ROWS.forEach(function(r, ri){
+  var ax = r.a[0], ay = r.a[1], bx = r.b[0], by = r.b[1];
+  r.cnt = [0,0,0]; r.tot = 0; r.list = []; r.vk = vkey(r);
+  r.label = r.num ? "Row " + r.num : (r.kind === "aronia" ? "Aronia row" : "Gooseberry row");
+  if (r.measured) MEAS = r;
+  for (var k = 0; k < r.n; k++){
+    var f = (k + 0.5) / r.n, pos = f * r.len;
+    var c = r.c ? r.c[k] : null, t = c ? c[0]+c[1]+c[2] : 0;
+    var b = { x: ax+(bx-ax)*f, y: ay+(by-ay)*f, row: ri, k: k, c: c, t: t,
+              d: r.d0 + (r.rev ? r.len - pos : pos), ph: PH_ALL[(ri*7 + k*3) % PH_ALL.length] };
+    if (c){ r.cnt[0]+=c[0]; r.cnt[1]+=c[1]; r.cnt[2]+=c[2]; r.tot += t; meanT += t; nEx++; }
+    bushes.push(b); r.list.push(b);
+  }
+  DMAX = Math.max(DMAX, r.d0 + r.len);
+  (groups[r.g] = groups[r.g] || []).push(r);
+});
+meanT /= nEx;
+Object.keys(groups).forEach(function(g){ groups[g].sort(function(a, b){ return a.d0 - b.d0; }); });
+
+/* variety legend */
+(function(){
+  var seen = {}, html = "";
+  ROWS.forEach(function(r){ seen[r.vk] = (seen[r.vk] || 0) + 1; });
+  Object.keys(VCOL).forEach(function(k){ if (!seen[k]) return;
+    var name = k === "mixed" ? "mixed rows" : k === "aronia" ? "Aronia" : k === "gooseberry" ? "gooseberry" : k;
+    html += '<span class="' + (k === "aronia" || k === "gooseberry" ? "line" : "") + '" style="--c:' + VCOL[k] + '">' + name + "</span>"; });
+  $("vleg").innerHTML = html;
+})();
+
+/* ---------- imagery levels ---------- */
+var LV = M.levels.map(function(l){
+  var z = l[0], f = Math.pow(2, 18 - z), img = new Image();
+  return { z: z, img: img, ok: false, x: l[1], y: l[2], s: M.levelSize * f };
+});
+var nLoaded = 0;
+LV.forEach(function(L){
+  L.img.onload = function(){ L.ok = true; nLoaded++; $("load").textContent = "Loading imagery, " + nLoaded + " of " + LV.length; dirty = true; if (nLoaded === LV.length) ready(); };
+  L.img.onerror = function(){ nLoaded++; if (nLoaded === LV.length) ready(); };
+  L.img.src = "media/levels/z" + L.z + ".webp";
+});
+
+/* ---------- camera ---------- */
+var S = { s: 7, rot: 0, cx: M.start[0], cy: M.start[1], yo: 0, fill: 0, dark: 0, pin: 1 };
+var phase = "intro", dirty = true, hover = null, pinned = false, vmode = false, touched = false;
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.max(window.innerWidth, 1); H = Math.max(window.innerHeight, 1);
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  cv.style.width = W + "px"; cv.style.height = H + "px";
+  if (phase === "intro") S.s = startS();
+  if (phase === "landed" && !touched) gsap.set(S, landing());
+  dirty = true;
+}
+function startS(){ return 7 + Math.log2(Math.min(W / 560, H / 720) * 0.95); }
+function landing(){
+  var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  ROWS.forEach(function(r){ [r.a, r.b].forEach(function(p){
+    if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; }); });
+  var mob = W <= 640, top = mob ? 120 : 80, bot = mob ? 300 : 50, sideL = mob ? 16 : 420, sideR = mob ? 60 : 80;
+  if (!mob && W < 1000){ sideL = 40; bot = 360; }
+  var aw = W - sideL - sideR, ah = H - top - bot;
+  var k = Math.min(aw / (x1-x0), ah / (y1-y0));
+  return { s: 18 + Math.log2(k) - 0.05, rot: 0, cx: (x0+x1)/2 - ((sideL - sideR)/2)/k, cy: (y0+y1)/2 - ((top - bot)/2)/k, yo: 0 };
+}
+function K(){ return Math.pow(2, S.s - 18); }
+function toScreen(x, y){
+  var k = K(), c = Math.cos(S.rot), s = Math.sin(S.rot), dx = (x - S.cx)*k, dy = (y - S.cy)*k;
+  return [W/2 + dx*c - dy*s, H/2 + S.yo + dx*s + dy*c];
+}
+function toWorld(px, py){
+  var k = K(), c = Math.cos(-S.rot), s = Math.sin(-S.rot), x = (px - W/2)/k, y = (py - H/2 - S.yo)/k;
+  return [x*c - y*s + S.cx, x*s + y*c + S.cy];
+}
+function worldXf(){
+  var k = K();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.translate(W/2, H/2 + S.yo); ctx.rotate(S.rot); ctx.scale(k, k); ctx.translate(-S.cx, -S.cy);
+}
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+function sstep(a, b, v){ var t = clamp((v - a)/(b - a), 0, 1); return t*t*(3 - 2*t); }
+
+/* ---------- drawing ---------- */
+function drawImagery(){
+  var k = K(), hd = Math.hypot(W, H)/2/k, off = Math.hypot(S.cx, S.cy), start = 0;
+  for (var i = LV.length - 1; i >= 0; i--){
+    var L = LV[i], a = i === 0 ? 1 : clamp((S.s - L.z + 1.15)/0.75, 0, 1);
+    if (L.ok && a >= 1 && off + hd < L.s*0.37){ start = i; break; }
+  }
+  worldXf();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  for (var j = start; j < LV.length; j++){
+    var Lj = LV[j], aj = j === 0 ? 1 : clamp((S.s - Lj.z + 1.15)/0.75, 0, 1);
+    if (!Lj.ok || aj <= 0) continue;
+    ctx.globalAlpha = aj; ctx.drawImage(Lj.img, Lj.x, Lj.y, Lj.s, Lj.s);
+  }
+  ctx.globalAlpha = 1;
+  if (S.dark > 0){
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.globalCompositeOperation = "saturation"; ctx.globalAlpha = 0.5*S.dark;
+    ctx.fillStyle = "#808080"; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 0.32*S.dark;
+    ctx.fillStyle = "#070806"; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+}
+function ends(r){ return r.rev ? [r.b, r.a] : [r.a, r.b]; }
+var run = [0,0,0], runN = 0;
+function drawMarks(){
+  var k = K(), dist = S.fill * (DMAX + 8), spx = SP*k;
+  var base = Math.max(1.8, Math.min(spx*0.55, 2.6 + spx*0.22)), pies = base >= 3.4 && !vmode, POP = 5/MPP;
+  run[0] = run[1] = run[2] = 0; runN = 0;
+  worldXf();
+  // driven rows; aronia and gooseberry rows as plain coloured lines
+  ROWS.forEach(function(r){
+    var p = clamp((dist - r.d0)/r.len, 0, 1); if (p <= 0) return;
+    var e = ends(r), sx = e[0][0], sy = e[0][1];
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + (e[1][0]-sx)*p, sy + (e[1][1]-sy)*p);
+    if (r.kind !== "blueberry"){ ctx.lineWidth = Math.max(2.5, spx*0.5)/k; ctx.strokeStyle = VCOL[r.kind]; }
+    else if (r.measured){ ctx.lineWidth = 2.4/k; ctx.strokeStyle = "rgba(243,236,219,.95)"; }
+    else { ctx.lineWidth = 1/k; ctx.strokeStyle = vmode ? VCOL[r.vk] : "rgba(236,233,225,.18)"; }
+    ctx.stroke();
+  });
+  if (hover && hover.row != null){
+    var hr = ROWS[hover.row]; ctx.lineWidth = 3/k; ctx.strokeStyle = "rgba(243,236,219,.6)";
+    ctx.beginPath(); ctx.moveTo(hr.a[0], hr.a[1]); ctx.lineTo(hr.b[0], hr.b[1]); ctx.stroke();
+  }
+  var paths = [new Path2D(), new Path2D(), new Path2D()], vp = {}, ring = new Path2D(), out = new Path2D();
+  for (var i = 0; i < bushes.length; i++){
+    var b = bushes[i], pop = clamp((dist - b.d)/POP, 0, 1);
+    if (pop <= 0) continue;
+    if (!b.c){ var rr = base*0.6*pop/k; ring.moveTo(b.x + rr, b.y); ring.arc(b.x, b.y, rr, 0, 6.2832); continue; }
+    run[0] += b.c[0]; run[1] += b.c[1]; run[2] += b.c[2]; runN++;
+    var e2 = pop < 1 ? 1 + 0.35*Math.sin(pop*Math.PI) : 1;
+    var r = base * clamp(Math.sqrt(b.t/meanT), 0.3, 1.5) * pop * e2 / k;
+    if (b.t === 0) continue;
+    if (vmode){
+      var key = ROWS[b.row].vk; var P = vp[key] = vp[key] || new Path2D();
+      P.moveTo(b.x + r, b.y); P.arc(b.x, b.y, r, 0, 6.2832); continue;
+    }
+    if (pies){
+      var a0 = -Math.PI/2 - S.rot;
+      for (var q = 0; q < 3; q++){
+        if (!b.c[q]) continue;
+        var a1 = a0 + 6.2832*b.c[q]/b.t;
+        paths[q].moveTo(b.x, b.y); paths[q].arc(b.x, b.y, r, a0, a1); paths[q].closePath(); a0 = a1;
+      }
+      out.moveTo(b.x + r, b.y); out.arc(b.x, b.y, r, 0, 6.2832);
+    } else {
+      var m = b.c[0] > b.c[2] ? (b.c[0] > b.c[1] ? 0 : 1) : (b.c[2] > b.c[1] ? 2 : 1);
+      paths[m].moveTo(b.x + r, b.y); paths[m].arc(b.x, b.y, r, 0, 6.2832);
+    }
+  }
+  if (pies){ ctx.lineWidth = 1.6/k; ctx.strokeStyle = "rgba(5,6,5,.75)"; ctx.stroke(out); }
+  if (vmode){ Object.keys(vp).forEach(function(key){ ctx.fillStyle = VCOL[key]; ctx.fill(vp[key]); }); }
+  else for (var q2 = 0; q2 < 3; q2++){ ctx.fillStyle = COL[q2]; ctx.fill(paths[q2]); }
+  ctx.lineWidth = 1.4/k; ctx.strokeStyle = "#f3ecdb"; ctx.stroke(ring);
+  if (hover && hover.b){
+    var hb = hover.b; ctx.lineWidth = 1.5/k; ctx.strokeStyle = "#f3ecdb"; ctx.beginPath();
+    ctx.arc(hb.x, hb.y, (base*1.9 + 3)/k, 0, 6.2832); ctx.stroke();
+  }
+  // robots
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (S.fill > 0 && S.fill < 1){
+    Object.keys(groups).forEach(function(g){
+      var rs = groups[g], last = rs[rs.length-1];
+      if (dist > last.d0 + last.len + 6/MPP) return;
+      var px, py, dx, dy;
+      for (var j = 0; j < rs.length; j++){
+        var rj = rs[j], e3 = ends(rj), sx = e3[0][0], sy = e3[0][1], ex = e3[1][0], ey = e3[1][1];
+        if (dist <= rj.d0 + rj.len || j === rs.length - 1){
+          if (dist < rj.d0 && j > 0){
+            var pe = ends(rs[j-1])[1], t = clamp(1 - (rj.d0 - dist)/4, 0, 1);
+            px = pe[0] + (sx - pe[0])*t; py = pe[1] + (sy - pe[1])*t; dx = sx - pe[0]; dy = sy - pe[1];
+          } else { var p = clamp((dist - rj.d0)/rj.len, 0, 1); px = sx + (ex-sx)*p; py = sy + (ey-sy)*p; dx = ex - sx; dy = ey - sy; }
+          break;
+        }
+      }
+      var Ps = toScreen(px, py), ang = Math.atan2(dy, dx) + S.rot;
+      ctx.save(); ctx.translate(Ps[0], Ps[1]); ctx.rotate(ang);
+      ctx.fillStyle = "rgba(243,236,219,.22)"; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = "#f3ecdb"; ctx.fillRect(-6, -3.5, 12, 7);
+      ctx.fillStyle = "#0b0d0a"; ctx.fillRect(2, -2, 3, 4);
+      ctx.restore();
+    });
+  }
+  // Row 24 label on the map
+  var mp = MEAS ? clamp((dist - MEAS.d0)/MEAS.len, 0, 1) : 0;
+  if (MEAS && mp > 0.3){
+    var A = toScreen(MEAS.a[0], MEAS.a[1]), B = toScreen(MEAS.b[0], MEAS.b[1]), L = A[1] < B[1] ? A : B;
+    ctx.globalAlpha = sstep(0.3, 0.8, mp); ctx.font = "italic 400 14px Literata, Georgia, serif";
+    var txt = "Row 24, one stretch measured", tw = ctx.measureText(txt).width;
+    var lx = clamp(L[0] + 8, 8, W - tw - 18), ly = clamp(L[1] - 10, 90, H - 60);
+    ctx.fillStyle = "rgba(11,13,10,.82)"; ctx.fillRect(lx - 6, ly - 15, tw + 12, 21);
+    ctx.fillStyle = "#f3ecdb"; ctx.fillText(txt, lx, ly);
+    ctx.globalAlpha = 1;
+  }
+}
+function drawPin(){
+  if (S.pin <= 0) return;
+  var P = toScreen(0, 0), t = (performance.now()/1000) % 2;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalAlpha = S.pin;
+  ctx.strokeStyle = "#f3ecdb"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(P[0], P[1], 5, 0, 6.2832); ctx.stroke();
+  if (!RM){ ctx.globalAlpha = S.pin * (1 - t/2); ctx.beginPath(); ctx.arc(P[0], P[1], 5 + t*14, 0, 6.2832); ctx.stroke(); }
+  ctx.globalAlpha = S.pin;
+  ctx.beginPath(); ctx.moveTo(P[0]-16, P[1]); ctx.lineTo(P[0]-9, P[1]); ctx.moveTo(P[0]+9, P[1]); ctx.lineTo(P[0]+16, P[1]);
+  ctx.moveTo(P[0], P[1]-16); ctx.lineTo(P[0], P[1]-9); ctx.moveTo(P[0], P[1]+9); ctx.lineTo(P[0], P[1]+16); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+var PLACES = [
+  [6.0, 8.7, "Ireland", ""],
+  [9.6, 12.6, "Co. Cork", ""],
+  [15.0, 17.8, "A blueberry farm", "43 rows, 12 varieties"]
+];
+var lastPlace = -1;
+function readouts(){
+    if (phase === "fly"){
+    var best = -1, op = 0;
+    PLACES.forEach(function(pl, i){ var o = Math.min(sstep(pl[0], pl[0] + 0.6, S.s), 1 - sstep(pl[1] - 0.6, pl[1], S.s)); if (o > op){ op = o; best = i; } });
+    if (best !== lastPlace && best >= 0){ $("pn").textContent = PLACES[best][2]; $("ps").textContent = PLACES[best][3]; lastPlace = best; }
+    $("place").style.opacity = op.toFixed(3);
+  } else $("place").style.opacity = 0;
+  if (S.fill > 0){
+    var T = run[0] + run[1] + run[2];
+    $("pb").textContent = fmt(T); $("pbu").textContent = fmt(runN); $("pr").textContent = T ? Math.round(100*run[2]/T) : 0;
+    $("pripe").textContent = fmt(run[2]);
+    var bs = $("pbar").children; for (var i = 0; i < 3; i++) bs[i].style.width = (T ? 100*run[2-i]/T : 0) + "%";
+  }
+}
+function frame(){
+  if (!dirty && !(S.pin > 0 && !RM)) return;
+  dirty = false;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = "#0b0d0a"; ctx.fillRect(0, 0, W, H);
+  drawImagery();
+  if (S.fill > 0) drawMarks();
+  drawPin();
+  readouts();
+}
+gsap.ticker.add(frame);
+function upd(){ dirty = true; }
+
+/* ---------- the visit ---------- */
+var tl = null;
+function ready(){
+  $("go").disabled = false; $("load").textContent = "";
+  var ft = /^#fly=([\d.]+)/.exec(location.hash);   // test view: the descent paused at t seconds
+  if (ft){ fly(); tl.pause(parseFloat(ft[1])); dirty = true; frame(); return; }
+  if (/^#land/.test(location.hash)){ // test views: #land, #land-row, #land-bush, #land-var, #land+1.5
+    fly(true); var zm = /\+([\d.]+)/.exec(location.hash); if (zm) S.s += parseFloat(zm[1]);
+    if (/var/.test(location.hash)) setView(true);
+    dirty = true; frame(); if (/row/.test(location.hash) && $("meas")) $("meas").click();
+    if (/bush/.test(location.hash)){ var tb = bushes[300], P = toScreen(tb.x, tb.y); showCard({ b: tb, row: tb.row }, P[0], P[1]); pin(true); }
+    return; }
+  farmStart();
+}
+/* open on the farm itself (no descent from Ireland): rows fill in as the robots drive */
+function farmStart(){
+  if (tl) tl.kill(); closeCard();
+  var L = landing();
+  phase = "fly"; touched = false;
+  gsap.set("#intro", { autoAlpha: 0 });
+  gsap.set(S, { s: L.s, rot: L.rot, cx: L.cx, cy: L.cy, yo: 0, fill: RM ? 1 : 0, dark: 1, pin: 0 });
+  if (RM){ land(); upd(); return; }
+  phase = "fill"; gsap.set("#panel", { autoAlpha: 0, y: 16 });
+  tl = gsap.timeline({ onUpdate: upd });
+  tl.to("#panel", { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" }, 0.3)
+    .to(S, { fill: 1, duration: 8, ease: "none" }, 0.4)
+    .add(land);
+}
+function fly(instant){
+  instant = instant === true;
+  if (phase !== "intro") return;
+  phase = "fly"; touched = false; closeCard();
+  var L = landing();
+  if (RM || instant){
+    gsap.set("#intro", { autoAlpha: 0 });
+    gsap.set(S, { s: L.s, rot: L.rot, cx: L.cx, cy: L.cy, fill: 1, dark: 1, pin: 0 });
+    land(); upd(); return;
+  }
+  tl = gsap.timeline({ onUpdate: upd });
+  tl.to("#intro", { autoAlpha: 0, y: -24, duration: 0.7, ease: "power2.in" }, 0)
+    .to(S, { s: L.s - 0.15, duration: 9.4, ease: "sine.inOut" }, 0.2)
+    .to(S, { cx: 0, cy: 0, duration: 3.6, ease: "power2.inOut" }, 0.4)
+    .to(S, { pin: 0, duration: 0.8 }, 7.4)
+    .to(S, { cx: L.cx, cy: L.cy, duration: 3.4, ease: "power2.inOut" }, 6.4)
+    .to(S, { s: L.s, dark: 1, duration: 1.4, ease: "power1.out" }, 9.6)
+    .add(function(){ phase = "fill"; gsap.set("#panel", { autoAlpha: 0, y: 16 }); }, 9.8)
+    .to("#panel", { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" }, 9.9)
+    .to(S, { fill: 1, duration: 8, ease: "none" }, 10.0)
+    .add(land);
+}
+function land(){
+  phase = "landed";
+  gsap.set("#panel", { autoAlpha: 1 });
+  gsap.to("#ctrl", { autoAlpha: 1, duration: RM ? 0 : 0.5 });
+  S.fill = 1; dirty = true; frame();
+}
+function replay(){ farmStart(); }
+function replayDescent(){
+  if (tl) tl.kill(); closeCard();
+  gsap.set(S, { s: startS(), rot: 0, cx: M.start[0], cy: M.start[1], yo: 0, fill: 0, dark: 0, pin: 1 });
+  gsap.set(["#panel", "#ctrl"], { autoAlpha: 0 });
+  gsap.set("#intro", { autoAlpha: 1, y: 0 });
+  phase = "intro"; upd();
+  if (!RM) setTimeout(function(){ fly(); }, 600);
+}
+function setView(v){
+  vmode = v; $("vv").classList.toggle("on", v); $("vr").classList.toggle("on", !v);
+  document.body.classList.toggle("vmode", v); upd();
+}
+$("vr").addEventListener("click", function(){ setView(false); });
+$("vv").addEventListener("click", function(){ setView(true); });
+$("go").addEventListener("click", function(){ fly(); });
+$("replay").addEventListener("click", replay);
+window.addEventListener("keydown", function(e){
+  if (phase === "intro" && !$("go").disabled && (e.key === " " || e.key === "ArrowDown" || e.key === "Enter")) { e.preventDefault(); fly(); }
+  if (e.key === "Escape") closeCard();
+});
+
+/* ---------- interaction ---------- */
+var ptrs = {}, dragStart = null, moved = false, pinchD = 0;
+function zoomAt(px, py, ds, dur){
+  var w0 = toWorld(px, py), lo = landing().s - 1.2, s1 = clamp(S.s + ds, lo, 22.5), tmp = { s: S.s };
+  gsap.to(tmp, { s: s1, duration: RM ? 0 : (dur || 0), ease: "power2.out", onUpdate: function(){
+    S.s = tmp.s; var w1 = toWorld(px, py); S.cx += w0[0] - w1[0]; S.cy += w0[1] - w1[1]; upd(); } });
+  touched = true;
+}
+cv.addEventListener("wheel", function(e){
+  e.preventDefault();
+  if (phase === "intro"){ if (!$("go").disabled) fly(); return; }
+  if (phase !== "landed") return;
+  zoomAt(e.clientX, e.clientY, -e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0022), 0);
+}, { passive: false });
+cv.addEventListener("pointerdown", function(e){
+  if (phase === "intro"){ if (!$("go").disabled) fly(); return; }
+  ptrs[e.pointerId] = [e.clientX, e.clientY];
+  cv.setPointerCapture(e.pointerId);
+  dragStart = [e.clientX, e.clientY]; moved = false;
+  var ids = Object.keys(ptrs); if (ids.length === 2){ var a = ptrs[ids[0]], b = ptrs[ids[1]]; pinchD = Math.hypot(a[0]-b[0], a[1]-b[1]); }
+});
+cv.addEventListener("pointermove", function(e){
+  if (phase === "landed" && ptrs[e.pointerId]){
+    var prev = ptrs[e.pointerId], ids = Object.keys(ptrs);
+    ptrs[e.pointerId] = [e.clientX, e.clientY];
+    if (Math.hypot(e.clientX - dragStart[0], e.clientY - dragStart[1]) > 5) moved = true;
+    if (ids.length === 2){
+      var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+      if (pinchD > 0) zoomAt((a[0]+b[0])/2, (a[1]+b[1])/2, Math.log2(d/pinchD), 0);
+      pinchD = d; return;
+    }
+    if (moved){
+      cv.classList.add("drag");
+      var w0 = toWorld(prev[0], prev[1]), w1 = toWorld(e.clientX, e.clientY);
+      S.cx += w0[0] - w1[0]; S.cy += w0[1] - w1[1]; touched = true; upd();
+      if (!pinned) closeCard();
+    }
+    return;
+  }
+  if (e.pointerType === "mouse" && !pinned && (phase === "landed" || phase === "fill")){
+    var h = hit(e.clientX, e.clientY);
+    if (h){ showCard(h, e.clientX, e.clientY); } else if (hover){ closeCard(); }
+  }
+});
+function up(e){
+  delete ptrs[e.pointerId]; cv.classList.remove("drag");
+  if (phase === "landed" && !moved && Object.keys(ptrs).length === 0){
+    var h = hit(e.clientX, e.clientY);
+    if (h){ showCard(h, e.clientX, e.clientY); pin(true); } else closeCard();
+  }
+  if (Object.keys(ptrs).length < 2) pinchD = 0;
+}
+cv.addEventListener("pointerup", up);
+cv.addEventListener("pointercancel", up);
+cv.addEventListener("pointerleave", function(e){ if (e.pointerType === "mouse" && !pinned && hover) closeCard(); });
+$("zin").addEventListener("click", function(){ zoomAt(W/2, H/2, 0.8, 0.45); });
+$("zout").addEventListener("click", function(){ zoomAt(W/2, H/2, -0.8, 0.45); });
+if ($("meas")) $("meas").addEventListener("click", function(){
+  if (phase !== "landed") return;
+  var mid = MEAS.list[Math.floor(MEAS.list.length/2)], P = toScreen(mid.x, mid.y);
+  showCard({ b: mid, row: mid.row }, P[0], P[1]); pin(true);
+});
+$("cx").addEventListener("click", closeCard);
+
+function hit(px, py){
+  var w = toWorld(px, py), k = K(), best = null, bd = Math.max(12, SP*k*0.9) / k, bd2 = bd*bd;
+  var dist = S.fill * (DMAX + 8);
+  for (var i = 0; i < bushes.length; i++){
+    var b = bushes[i]; if (b.d > dist) continue;
+    var dx = b.x - w[0], dy = b.y - w[1], d2 = dx*dx + dy*dy;
+    if (d2 < bd2){ bd2 = d2; best = b; }
+  }
+  if (best) return { b: best, row: best.row };
+  // aronia and gooseberry rows: nearest line
+  var lim = 8/k, bestR = -1;
+  ROWS.forEach(function(r, ri){
+    if (r.kind === "blueberry" || r.d0 > dist) return;
+    var ax = r.a[0], ay = r.a[1], vx = r.b[0]-ax, vy = r.b[1]-ay, t = clamp(((w[0]-ax)*vx + (w[1]-ay)*vy)/(vx*vx+vy*vy), 0, 1);
+    var d = Math.hypot(ax + vx*t - w[0], ay + vy*t - w[1]); if (d < lim){ lim = d; bestR = ri; }
+  });
+  return bestR >= 0 ? { row: bestR } : null;
+}
+
+/* ---------- card ---------- */
+var card = $("card"), cycle = null;
+function photo(src, cap){ $("cfig").style.display = ""; $("cimg").src = "media/photos/row24_" + src + ".webp"; $("ccap").textContent = cap; }
+function varietyText(r){
+  if (r.kind !== "blueberry") return r.kind === "aronia" ? "Aronia, not blueberry" : "Gooseberry, not blueberry";
+  var v = r.variety.split(" / ");
+  var s = v.length > 1 ? v.slice(0, -1).join(", ") + " and " + v[v.length-1] + " <i>along the row</i>" : r.variety;
+  return s + (r.note ? " <i>(" + r.note + ")</i>" : "");
+}
+function showCard(h, px, py){
+  var same = hover && hover.row === h.row && hover.b === h.b;
+  hover = h; upd();
+  var b = h.b, r = ROWS[h.row];
+  if (!same){
+    clearInterval(cycle);
+    var th = $("cth"); th.innerHTML = ""; th.style.display = "none";
+    $("cvar").innerHTML = varietyText(r);
+    if (!b){
+      $("cfig").style.display = "none";
+      $("cid").textContent = r.label; $("ctag").className = "tag"; $("ctag").textContent = "";
+      $("ctot").textContent = ""; $("clab").textContent = "No berry counts on this row.";
+      $("csplit").style.display = "none"; $("crow").innerHTML = "Zone: " + r.zone + ".";
+    } else if (r.measured){
+      $("cid").textContent = "Row 24"; $("ctag").className = "tag pre"; $("ctag").textContent = "measured, preliminary";
+      $("ctot").textContent = "522";
+      $("clab").innerHTML = "berries in the 3D model of one measured stretch of this row, July 2026. <b class='num'>574</b> berries counted in the video of that stretch. Both preliminary.";
+      $("csplit").style.display = "none";
+      PH_MEAS.forEach(function(p, i){
+        var bt = document.createElement("button"); bt.innerHTML = '<img alt="" src="media/photos/row24_' + p + '.webp">';
+        bt.addEventListener("click", function(){ sel(i); clearInterval(cycle); }); th.appendChild(bt);
+      });
+      var cur = 0, sel = function(i){ cur = i; photo(PH_MEAS[i], "Real photo from Row 24, July 2026");
+        Array.prototype.forEach.call(th.children, function(x, j){ x.className = j === i ? "on" : ""; }); };
+      sel(0); th.style.display = "flex";
+      if (!RM) cycle = setInterval(function(){ sel((cur + 1) % PH_MEAS.length); }, 2400);
+      $("crow").innerHTML = "The stretch is not marked bush by bush. Which traced row is Row 24 is our best match to the farm's row sheet.";
+    } else {
+      $("cid").textContent = r.label + ", bush " + (b.k + 1);
+      $("ctag").className = "tag ex"; $("ctag").textContent = "example values";
+      $("ctot").textContent = fmt(b.c[2]); $("clab").innerHTML = "berries ripe now, of <b class='num'>" + fmt(b.t) + "</b> berries on this bush";
+      $("csplit").style.display = "";
+      $("c0").textContent = fmt(b.c[0]); $("c1").textContent = fmt(b.c[1]); $("c2").textContent = fmt(b.c[2]);
+      photo(b.ph, "Photo from Row 24 on this farm, illustrative");
+      $("crow").innerHTML = r.label + ": <b>" + Math.round(100*r.cnt[2]/Math.max(r.tot,1)) + "</b>% ripe now, <b>" + fmt(r.cnt[2]) +
+        "</b> berries ripe now, of <b>" + fmt(r.tot) + "</b> berries on <b>" + fmt(r.n) + "</b> bushes";
+    }
+  }
+  if (W > 640){
+    var cw = 300, ch = card.offsetHeight || 420;
+    var x = px + 22, y = py - ch/2;
+    if (x + cw > W - 12) x = px - cw - 22;
+    card.style.left = clamp(x, 12, W - cw - 12) + "px"; card.style.top = clamp(y, 64, H - ch - 40) + "px";
+  }
+  card.classList.add("on"); document.body.classList.add("carded");
+}
+function pin(on){ pinned = on; card.classList.toggle("pinned", on); }
+function closeCard(){
+  hover = null; pin(false); clearInterval(cycle);
+  card.classList.remove("on"); document.body.classList.remove("carded"); upd();
+}
+
+window.addEventListener("resize", resize);
+resize();
+gsap.set(["#panel", "#ctrl"], { autoAlpha: 0 });
+})();
+</script>
+</body>
+</html>
+</body></html>
